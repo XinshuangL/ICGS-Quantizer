@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ICGS-Quantizer: Image-Conditioned 3D Gaussian Splat Quantization</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* ===== Design Tokens ===== */
+    :root{
+      --w: min(1100px, 65vw);
+      --bg:#fbfbfd;
+      --text:#0b0f19;
+      --muted:#6f7783;
+      --rule:#e6e9ef;
+      --surface:#ffffff;
+      --link:#0a58ff;
+      --accent:#215dff;
+      --shadow: 0 1px 1px rgba(16,24,40,.04), 0 12px 24px -18px rgba(16,24,40,.18);
+      --radius:.75rem;
+    }
+    @media (prefers-color-scheme:dark){
+      :root{
+        --bg:#0b0c10;
+        --text:#e8eaee;
+        --muted:#a0a7b1;
+        --rule:#262a31;
+        --surface:#101318;
+        --link:#7fb0ff;
+        --accent:#7aa7ff;
+        --shadow: 0 1px 2px rgba(0,0,0,.35), 0 14px 36px rgba(0,0,0,.35);
+      }
+    }
+
+    /* ===== Base ===== */
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height:1.6;
+      font-size: clamp(.98rem, .9rem + .22vw, 1.06rem);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    body::before{
+      content:"";
+      position:fixed; inset:0; z-index:-1; pointer-events:none;
+      background:
+        radial-gradient(900px 500px at 20% -10%, rgba(33,93,255,.080), transparent 60%),
+        radial-gradient(800px 400px at 110% 0%, rgba(33,93,255,.060), transparent 60%);
+    }
+
+    a{color:var(--link); text-decoration:underline; text-underline-offset:.14rem}
+    img,video{max-width:100%; height:auto; display:block}
+
+    .container{width:100%; padding-inline: max(4vw, 1rem)}
+    .container > *{max-width:var(--w); margin-inline:auto}
+    .stack > * + *{margin-top: clamp(1rem, 1.5vw, 1.5rem)}
+
+    hr{border:0; border-top:.0625rem solid var(--rule); margin: clamp(1rem, 2vw, 1.6rem) 0}
+
+    /* ===== Typography ===== */
+    h1,h2,h3{margin:0 0 .5rem; line-height:1.2; font-weight:700; letter-spacing:-.01em}
+    .paper-title{
+      font-size: clamp(2rem, 1.4rem + 2.6vw, 3rem);
+      margin-bottom:.35rem;
+    }
+    .paper-title .brand{
+      font-weight:800;
+      background: linear-gradient(90deg, var(--accent), #5ea2ff);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .subtitle{color:var(--muted); font-size: clamp(1rem, .95rem + .4vw, 1.15rem)}
+
+    .section{padding-block: 1.2rem}
+    .section-title{
+      font-size: clamp(1.6rem, 1.2rem + 2.2vw, 2.2rem); 
+      margin-bottom: .75rem;
+    }
+    .lead{color:var(--muted)}
+
+    /* ===== Hero ===== */
+    .hero{
+      padding-block: clamp(1.25rem, 3vw, 2.25rem);
+    }
+    .author-line, .affil-line{
+      display:flex; flex-wrap:wrap; justify-content:center; gap:.6rem 1rem;
+      color:var(--text);
+    }
+    .author-line b{font-weight:700}
+    .affil-line{color:var(--muted)}
+
+    /* ===== Figures ===== */
+    figure{margin:0}
+    .figure-card{
+      background:var(--surface); border:.0625rem solid var(--rule); border-radius:var(--radius);
+      padding: clamp(.6rem, 1vw, .85rem); box-shadow: var(--shadow);
+    }
+    .figure-card > img, .figure-card > video{
+      border-radius: 0;
+      border:0;
+      background:#000; /* for videos */
+    }
+    figcaption{margin-top:.5rem; color:var(--muted); font-size:.95rem}
+
+    /* ===== Qualitative Video Cards ===== */
+    .video-grid{display:grid; gap: clamp(.8rem, 1.2vw, 1rem)}
+    .video-card{
+      background:var(--surface); border:.0625rem solid var(--rule);
+      border-radius:var(--radius); padding: clamp(.75rem, 1.2vw, 1rem); 
+      box-shadow: var(--shadow);
+    }
+    .vid-title{
+      text-align:center; font-weight:700;
+      font-size: clamp(1.02rem, .95rem + .5vw, 1.25rem);
+      margin-bottom:.45rem;
+    }
+
+    /* ===== Utilities ===== */
+    .center{text-align:center}
+    .inline-list{list-style:none; padding:0; margin:0}
+    .inline-list > li{display:inline; }
+    .inline-list > li + li::before{content:"·"; margin: 0 .6rem; color:var(--muted)}
+
+    /* ===== Buttons ===== */
+    .cta-row {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .cta-row .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: 9999px;
+      background: #fff;
+      color: #444;
+      border: 1.5px solid #bbb;
+      font-weight: 500;
+      text-decoration: none;
+      transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    .cta-row .btn:hover {
+      transform: translateY(-1px);
+      background: #fafafa;
+      border-color: #999;
+      color: #222;
+    }
+
+  </style>
+  
+  <link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  crossorigin="anonymous" referrerpolicy="no-referrer">
+
+</head>
+<body>
+  <header class="hero container">
+    <div class="stack center">
+      <h1 class="paper-title">
+        <span class="brand">ICGS‑Quantizer</span>: Image‑Conditioned 3D Gaussian Splat Quantization
+      </h1>
+      <nav aria-label="Authors and affiliation">
+        <p class="author-line">
+          <b>Xinshuang Liu</b>
+          <b>Runfa Blark Li</b>
+          <b>Keito Suzuki</b>
+          <b>Truong Nguyen</b>
+        </p>
+        <p class="affil-line">University of California, San Diego · San Diego, CA, USA</p>
+      </nav>
+
+      <div class="cta-row">
+        <a class="btn" href="https://arxiv.org/abs/2508.15372" target="_blank" rel="noopener noreferrer">
+          <i class="fa-solid fa-file-pdf"></i> Paper
+        </a>
+        <a class="btn" href="https://github.com/XinshuangL/ICGS-Quantizer" target="_blank" rel="noopener noreferrer">
+          <i class="fa-brands fa-github"></i> Code
+        </a>
+      </div>
+      
+    </div>
+  </header>
+
+  <main class="container stack">
+    <!-- Intro Figure -->
+    <section class="section" aria-labelledby="intro-figure">
+      <figure class="figure-card">
+        <img src="img/introduction.png"
+             alt="Image‑conditioned scene quantization across times t₀ and t">
+        <figcaption id="intro-figure">
+          <em><strong>Image‑conditioned scene quantization.</strong> (a) At time <i>t₀</i>, the scene is encoded and quantized as discrete codes. However, after a prolonged period, the scene may have changed. (b) Conventional methods decode the scene from the codes, but can only recover the original state at <i>t₀ &lt; t</i>. (c) Our method decodes the scene from the codes <strong>conditioned on its image(s)</strong> captured at time <i>t</i>, adapting the scene to its current illumination and appearance.</em>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- Abstract -->
+    <section class="section" aria-labelledby="abstract">
+      <h2 class="section-title" id="abstract">Abstract</h2>
+      <p>
+        3D Gaussian Splatting (3DGS) has attracted considerable attention for enabling high-quality real-time rendering. Although 3DGS compression methods have been proposed for deployment on storage-constrained devices, two limitations hinder archival use: (1) they compress medium-scale scenes only to the megabyte range, which remains impractical for large-scale scenes or extensive scene collections; and (2) they lack mechanisms to accommodate scene changes after long-term archival. To address these limitations, we propose an Image-Conditioned Gaussian Splat Quantizer (<strong>ICGS‑Quantizer</strong>) that substantially enhances compression efficiency and provides adaptability to scene changes after archiving. ICGS-Quantizer improves quantization efficiency by jointly exploiting inter-Gaussian and inter-attribute correlations and by using shared codebooks across all training scenes, which are then fixed and applied to previously unseen test scenes, eliminating the overhead of per-scene codebooks. This approach effectively reduces the storage requirements for 3DGS to the kilobyte range while preserving visual fidelity. To enable adaptability to post-archival scene changes, ICGS-Quantizer conditions scene decoding on images captured at decoding time. The encoding, quantization, and decoding processes are trained jointly, ensuring that the codes—quantized representations of the scene—are effective for conditional decoding. We evaluate ICGS-Quantizer on 3D scene compression and 3D scene updating. Experimental results show that ICGS-Quantizer consistently outperforms state-of-the-art methods in compression efficiency and adaptability to scene changes. Our code, model, and data will be publicly available on GitHub.
+      </p>
+    </section>
+
+    <!-- Method -->
+    <section class="section" aria-labelledby="method">
+      <h2 class="section-title" id="method">Method</h2>
+      <figure class="figure-card">
+        <img src="img/overview.png"
+             alt="Overview: quantization and image‑conditioned decoding">
+        <figcaption>
+          <em><strong>An overview of the proposed ICGS‑Quantizer.</strong> (a) Quantization module: geometry and texture are decoupled and quantized independently. (b) Joint quantization of 3D Gaussians and their associated attributes. (c) Image‑conditioned decoding of 3D Gaussians. Auxiliary neural network branches and training objectives are omitted for simplicity.</em>
+        </figcaption>
+      </figure>
+      <p>
+        We first encode each 3DGS scene into a latent representation that is decoupled into geometry and texture features. The resulting features are quantized into discrete geometry and texture codes via residual vector quantizers (RVQs) whose codebooks are <strong>shared across all training scenes</strong> and frozen at test time, eliminating per‑scene codebook storage. Storing only discrete codes rather than floating‑point latent vectors significantly reduces storage. To reconstruct a scene, we recover the latent representation from the codes and decode Gaussian attributes, optionally conditioning on current images to adapt the scene to its current illumination and appearance.
+      </p>
+    </section>
+
+    <!-- Qualitative Results -->
+    <section class="section" aria-labelledby="qual-results">
+      <h2 class="section-title" id="qual-results">Qualitative Results</h2>
+      <div class="video-grid" aria-label="Qualitative result videos">
+        <figure class="video-card">
+          <figcaption class="vid-title">Illumination adaptation</figcaption>
+          <video src="img/01_illumination_adaptation.mp4" preload="metadata" playsinline controls aria-label="Illumination adaptation video">
+            Your browser does not support the video tag.
+          </video>
+        </figure>
+
+        <figure class="video-card">
+          <figcaption class="vid-title">Appearance adaptation</figcaption>
+          <video src="img/02_appearance_adaptation.mp4" preload="metadata" playsinline controls aria-label="Appearance adaptation video">
+            Your browser does not support the video tag.
+          </video>
+        </figure>
+
+        <figure class="video-card">
+          <figcaption class="vid-title">Illumination &amp; appearance adaptation</figcaption>
+          <video src="img/03_illumination_and_appearance_adaptation.mp4" preload="metadata" playsinline controls aria-label="Illumination and appearance adaptation video">
+            Your browser does not support the video tag.
+          </video>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section center" aria-label="Footer">
+      <ul class="inline-list">
+        <li>© Xinshuang Liu</li>
+      </ul>
+    </section>
+    
+  </main>
+</body>
+</html>
