@@ -1,6 +1,6 @@
 # ICGS-Quantizer: Image-Conditioned 3D Gaussian Splat Quantization
 
-[Homepage]([https://yyy.com](https://XinshuangL.github.io/ICGS-Quantizer)) | [Paper](https://arxiv.org/abs/2508.15372) | [Model checkpoint & data](https://drive.google.com/drive/folders/1Vq9HV7Aqa4Iwcgztz7N_wjSpAikpZbDH?usp=sharing)
+[Homepage](https://XinshuangL.github.io/ICGS-Quantizer) | [Paper](https://arxiv.org/abs/2508.15372) | [Model checkpoint & data](https://drive.google.com/drive/folders/1Vq9HV7Aqa4Iwcgztz7N_wjSpAikpZbDH?usp=sharing)
 
 Official implementation of the paper "Image-Conditioned 3-D Gaussian Splat Quantization for Scene Archival."
 
